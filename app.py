@@ -29,26 +29,27 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # Открываем изображение с помощью PIL, чтобы получить его исходные размеры
-        pil_image = Image.open(uploaded_file)
-        orig_width, orig_height = pil_image.size
-
+        # Открываем и обрабатываем изображение с помощью PIL
+        pil_image = Image.open(uploaded_file).convert("RGB")
+        
         # Рассчитываем новые размеры для отображения, сохраняя пропорции
         MAX_WIDTH = 700
-        display_width = orig_width
-        display_height = orig_height
+        orig_width, orig_height = pil_image.size
         if orig_width > MAX_WIDTH:
             display_width = MAX_WIDTH
             display_height = int(MAX_WIDTH * orig_height / orig_width)
+            pil_image = pil_image.resize((display_width, display_height))
+        else:
+            display_width = orig_width
+            display_height = orig_height
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            # Передаем исходный загруженный файл...
-            background_image=uploaded_file, 
+            # Передаем обработанный объект изображения PIL
+            background_image=pil_image, 
             update_streamlit=True,
-            # ...но явно задаем новые размеры для отображения
             height=display_height,
             width=display_width,
             drawing_mode="point",
