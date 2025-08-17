@@ -29,26 +29,32 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # Открываем и ОБЯЗАТЕЛЬНО конвертируем изображение в RGB
         image = Image.open(uploaded_file).convert("RGB")
         
-        # Создаем интерактивный холст
+        # --- НОВОЕ: Логика изменения размера изображения ---
+        # Ограничиваем ширину изображения для стабильной работы
+        MAX_WIDTH = 700
+        width, height = image.size
+        if width > MAX_WIDTH:
+            new_height = int(MAX_WIDTH * height / width)
+            image = image.resize((MAX_WIDTH, new_height))
+        # --- КОНЕЦ НОВОГО БЛОКА ---
+
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
             background_image=image,
             update_streamlit=True,
+            # Используем размеры измененного изображения
             height=image.height,
             width=image.width,
             drawing_mode="point",
             key="canvas",
         )
 
-        # Если на холсте появилось новое действие (новая точка)
         if canvas_result.json_data is not None and canvas_result.json_data["objects"]:
             new_point_data = canvas_result.json_data["objects"][-1]
-            # Убедимся, что точка еще не была добавлена
             is_new = True
             for p in st.session_state["points"]:
                 if p['left'] == new_point_data['left'] and p['top'] == new_point_data['top']:
@@ -61,14 +67,12 @@ with col1:
     else:
         st.info("Пожалуйста, загрузите изображение чертежа в боковой панели.")
     
-    # Отображаем список всех отмеченных точек
     st.write("Отмеченные точки (в пикселях):")
     st.dataframe(st.session_state["points"])
 
 
 with col2:
     st.subheader("3D Модель")
-    # Пока что модель не меняется, это следующий шаг
     st.info("На следующих этапах эта модель будет перестраиваться на основе отмеченных вами точек.")
     
     default_truck = ParametricVehicle()
