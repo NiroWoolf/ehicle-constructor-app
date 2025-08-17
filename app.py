@@ -27,15 +27,19 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # --- ИЗМЕНЕНО: Упрощенный и более надежный способ открытия изображения ---
         image = Image.open(uploaded_file).convert("RGB")
         
-        # Ограничиваем ширину изображения для стабильной работы
         MAX_WIDTH = 700
         width, height = image.size
         if width > MAX_WIDTH:
             new_height = int(MAX_WIDTH * height / width)
             image = image.resize((MAX_WIDTH, new_height))
+
+        # --- ОТЛАДОЧНАЯ СТРОКА ---
+        # Показываем изображение стандартным способом, чтобы проверить, что оно корректно обрабатывается
+        st.caption("Отладочная информация: изображение, которое мы передаем в холст.")
+        st.image(image)
+        # --- КОНЕЦ ОТЛАДОЧНОГО БЛОКА ---
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
@@ -70,8 +74,6 @@ with col1:
 with col2:
     st.subheader("3D Модель")
     
-    # Создаем и отображаем 3D модель
     default_truck = ParametricVehicle()
     fig = default_truck.generate_figure()
     st.plotly_chart(fig, use_container_width=True)
-
