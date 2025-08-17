@@ -35,10 +35,10 @@ st.sidebar.info("Кликните на чертеж, чтобы отметить
 
 # --- Секция калибровки в боковой панели ---
 st.sidebar.header("Калибровка масштаба")
+# Проверяем состояние ДО отрисовки основных элементов
 if len(st.session_state["points"]) >= 2:
     st.sidebar.markdown("Отметьте 2 точки для известного размера.")
     
-    # Пока что для примера только один вариант
     reference_dimension_type = st.sidebar.selectbox(
         "Что измеряют первые 2 точки?",
         ("Колесная база", "Диаметр колеса", "Длина полуприцепа")
@@ -56,6 +56,7 @@ if len(st.session_state["points"]) >= 2:
         
         if pixel_dist > 0:
             st.session_state["pixels_per_meter"] = pixel_dist / real_size_m
+            st.rerun() # Перезапускаем, чтобы показать success-сообщение
         else:
             st.sidebar.error("Расстояние между точками равно нулю.")
 
@@ -82,10 +83,9 @@ with col1:
         for i, point in enumerate(st.session_state["points"]):
             x, y = point
             radius = 5
-            # Рисуем точку
             draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill="red", outline="red")
-            # Подписываем номер точки
-            draw.text((x + radius, y), str(i + 1), fill="white")
+            # ИЗМЕНЕНО: Цвет текста на черный для лучшей видимости
+            draw.text((x + radius, y), str(i + 1), fill="black")
 
         value = streamlit_image_coordinates(image_with_points, key="local")
 
@@ -110,4 +110,3 @@ with col2:
     default_truck = ParametricVehicle()
     fig = default_truck.generate_figure()
     st.plotly_chart(fig, use_container_width=True)
-
