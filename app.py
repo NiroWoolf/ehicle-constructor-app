@@ -1,19 +1,9 @@
 import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-import base64
-from io import BytesIO
 
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
-
-# --- Вспомогательная функция ---
-def image_to_base64(image: Image.Image) -> str:
-    """Конвертирует изображение PIL в строку Base64 для вставки в HTML/CSS."""
-    buffered = BytesIO()
-    image.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-    return f"data:image/png;base64,{img_str}"
 
 # --- Инициализация состояния ---
 if "points" not in st.session_state:
@@ -46,15 +36,12 @@ with col1:
             new_height = int(MAX_WIDTH * height / width)
             image = image.resize((MAX_WIDTH, new_height))
 
-        # --- ИЗМЕНЕНО: Передаем изображение в формате Base64 ---
-        bg_image_b64 = image_to_base64(image)
-
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            # Используем строку Base64 вместо объекта изображения
-            background_image=bg_image_b64,
+            # Возвращаемся к прямому использованию объекта изображения
+            background_image=image,
             update_streamlit=True,
             height=image.height,
             width=image.width,
