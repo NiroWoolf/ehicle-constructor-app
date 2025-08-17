@@ -28,29 +28,29 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("2D Чертеж")
-    # --- ИЗМЕНЕНО: Используем uploaded_file напрямую ---
-    # Это самый надежный способ, который должен работать в облаке
-    background_image = uploaded_file if uploaded_file is not None else None
+    if uploaded_file is not None:
+        # Открываем изображение с помощью PIL, чтобы получить его исходные размеры
+        pil_image = Image.open(uploaded_file)
+        orig_width, orig_height = pil_image.size
 
-    if background_image is not None:
-        # Мы все еще используем PIL для получения размеров, но не для передачи в холст
-        image = Image.open(background_image)
-        width, height = image.size
-
-        # Ограничиваем ширину для отображения
+        # Рассчитываем новые размеры для отображения, сохраняя пропорции
         MAX_WIDTH = 700
-        if width > MAX_WIDTH:
-            height = int(MAX_WIDTH * height / width)
-            width = MAX_WIDTH
+        display_width = orig_width
+        display_height = orig_height
+        if orig_width > MAX_WIDTH:
+            display_width = MAX_WIDTH
+            display_height = int(MAX_WIDTH * orig_height / orig_width)
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            background_image=background_image, # Передаем загруженный файл напрямую
+            # Передаем исходный загруженный файл...
+            background_image=uploaded_file, 
             update_streamlit=True,
-            height=height,
-            width=width,
+            # ...но явно задаем новые размеры для отображения
+            height=display_height,
+            width=display_width,
             drawing_mode="point",
             key="canvas",
         )
