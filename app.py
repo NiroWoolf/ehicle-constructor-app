@@ -1,17 +1,14 @@
 import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-from io import BytesIO
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
 
 # --- Инициализация состояния ---
-# Streamlit state для хранения данных между обновлениями страницы
 if "points" not in st.session_state:
     st.session_state["points"] = []
 
 # --- Основное приложение Streamlit ---
-
 st.set_page_config(layout="wide")
 st.title("Движок-Конструктор 3D-моделей (Этап 2)")
 
@@ -30,11 +27,8 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # --- НОВОЕ: Более надежный способ чтения файла ---
-        # Сначала читаем файл в память, потом открываем
-        image_data = uploaded_file.getvalue()
-        image = Image.open(BytesIO(image_data)).convert("RGB")
-        # --- КОНЕЦ НОВОГО БЛОКА ---
+        # --- ИЗМЕНЕНО: Упрощенный и более надежный способ открытия изображения ---
+        image = Image.open(uploaded_file).convert("RGB")
         
         # Ограничиваем ширину изображения для стабильной работы
         MAX_WIDTH = 700
@@ -75,9 +69,9 @@ with col1:
 
 with col2:
     st.subheader("3D Модель")
-    st.info("На следующих этапах эта модель будет перестраиваться на основе отмеченных вами точек.")
     
+    # Создаем и отображаем 3D модель
     default_truck = ParametricVehicle()
     fig = default_truck.generate_figure()
-    
     st.plotly_chart(fig, use_container_width=True)
+
