@@ -1,5 +1,5 @@
-streamlit
+streamlit==1.22.0
+streamlit-drawable-canvas==0.9.3
 plotly
 numpy
 pillow
-streamlit-drawable-canvas
