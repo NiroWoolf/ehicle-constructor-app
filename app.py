@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+from io import BytesIO
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
 
@@ -29,16 +30,18 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("RGB")
+        # --- НОВОЕ: Более надежный способ чтения файла ---
+        # Сначала читаем файл в память, потом открываем
+        image_data = uploaded_file.getvalue()
+        image = Image.open(BytesIO(image_data)).convert("RGB")
+        # --- КОНЕЦ НОВОГО БЛОКА ---
         
-        # --- НОВОЕ: Логика изменения размера изображения ---
         # Ограничиваем ширину изображения для стабильной работы
         MAX_WIDTH = 700
         width, height = image.size
         if width > MAX_WIDTH:
             new_height = int(MAX_WIDTH * height / width)
             image = image.resize((MAX_WIDTH, new_height))
-        # --- КОНЕЦ НОВОГО БЛОКА ---
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
@@ -46,7 +49,6 @@ with col1:
             stroke_color="red",
             background_image=image,
             update_streamlit=True,
-            # Используем размеры измененного изображения
             height=image.height,
             width=image.width,
             drawing_mode="point",
