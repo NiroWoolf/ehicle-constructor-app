@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 import numpy as np
+from io import BytesIO
 
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
@@ -29,29 +30,35 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        pil_image = Image.open(uploaded_file).convert("RGB")
-        
+        # --- ФИНАЛЬНОЕ ИЗМЕНЕНИЕ: Надежная обработка любого изображения ---
+        # 1. Открываем загруженный файл
+        image = Image.open(uploaded_file)
+
+        # 2. Конвертируем в RGB, чтобы убрать прозрачность (важно для PNG)
+        image = image.convert("RGB")
+
+        # 3. Сохраняем в памяти в формате JPG, чтобы стандартизировать данные
+        buf = BytesIO()
+        image.save(buf, format="JPEG")
+        # Открываем стандартизированное изображение из памяти
+        processed_image = Image.open(buf)
+        # --- КОНЕЦ ФИНАЛЬНОГО ИЗМЕНЕНИЯ ---
+
         MAX_WIDTH = 700
-        orig_width, orig_height = pil_image.size
+        orig_width, orig_height = processed_image.size
         if orig_width > MAX_WIDTH:
             display_width = MAX_WIDTH
             display_height = int(MAX_WIDTH * orig_height / orig_width)
-            pil_image = pil_image.resize((display_width, display_height))
+            processed_image = processed_image.resize((display_width, display_height))
         else:
             display_width = orig_width
             display_height = orig_height
-
-        # --- ОТЛАДОЧНАЯ СТРОКА ---
-        # Показываем изображение стандартным способом, чтобы проверить, что оно корректно обрабатывается
-        st.caption("Отладочная информация: изображение, которое мы передаем в холст.")
-        st.image(pil_image)
-        # --- КОНЕЦ ОТЛАДОЧНОГО БЛОКА ---
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            background_image=pil_image, 
+            background_image=processed_image, 
             update_streamlit=True,
             height=display_height,
             width=display_width,
