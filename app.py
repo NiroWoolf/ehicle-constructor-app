@@ -4,6 +4,11 @@ from streamlit_drawable_canvas import st_canvas
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
 
+# --- Инициализация состояния ---
+# Streamlit state для хранения данных между обновлениями страницы
+if "points" not in st.session_state:
+    st.session_state["points"] = []
+
 # --- Основное приложение Streamlit ---
 
 st.set_page_config(layout="wide")
@@ -12,7 +17,11 @@ st.title("Движок-Конструктор 3D-моделей (Этап 2)")
 # --- Боковая панель для управления ---
 st.sidebar.header("Управление")
 uploaded_file = st.sidebar.file_uploader("Загрузите чертеж (PNG, JPG)", type=["png", "jpg", "jpeg"])
-st.sidebar.info("Кликните на чертеж, чтобы получить координаты точки.")
+
+if st.sidebar.button("Сбросить точки"):
+    st.session_state["points"] = []
+
+st.sidebar.info("Кликните на чертеж, чтобы отметить ключевые точки.")
 
 # --- Основная область ---
 col1, col2 = st.columns(2)
@@ -20,43 +29,49 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # Открываем изображение
-        image = Image.open(uploaded_file)
+        # Открываем и ОБЯЗАТЕЛЬНО конвертируем изображение в RGB
+        image = Image.open(uploaded_file).convert("RGB")
         
         # Создаем интерактивный холст
-        # `update_streamlit` = True означает, что приложение будет обновляться при каждом действии
         canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0.3)",  # Цвет заливки (не используется для кликов)
-            stroke_width=2,
-            stroke_color="#FF0000",
+            fill_color="rgba(255, 165, 0, 0.3)",
+            stroke_width=3,
+            stroke_color="red",
             background_image=image,
             update_streamlit=True,
             height=image.height,
             width=image.width,
-            drawing_mode="point", # Режим "точка" для отслеживания кликов
+            drawing_mode="point",
             key="canvas",
         )
 
-        # Отображаем координаты последнего клика
-        if canvas_result.json_data is not None:
-            # Проверяем, есть ли объекты (точки) на холсте
-            if canvas_result.json_data["objects"]:
-                # Берем последнюю нарисованную точку
-                last_point = canvas_result.json_data["objects"][-1]
-                x = last_point["left"]
-                y = last_point["top"]
-                st.write(f"Последний клик (пиксели): X={x}, Y={y}")
-            else:
-                st.write("Кликните на изображение, чтобы отметить точку.")
+        # Если на холсте появилось новое действие (новая точка)
+        if canvas_result.json_data is not None and canvas_result.json_data["objects"]:
+            new_point_data = canvas_result.json_data["objects"][-1]
+            # Убедимся, что точка еще не была добавлена
+            is_new = True
+            for p in st.session_state["points"]:
+                if p['left'] == new_point_data['left'] and p['top'] == new_point_data['top']:
+                    is_new = False
+                    break
+            
+            if is_new:
+                st.session_state["points"].append(new_point_data)
 
     else:
         st.info("Пожалуйста, загрузите изображение чертежа в боковой панели.")
+    
+    # Отображаем список всех отмеченных точек
+    st.write("Отмеченные точки (в пикселях):")
+    st.dataframe(st.session_state["points"])
+
 
 with col2:
     st.subheader("3D Модель")
-    # Создаем экземпляр грузовика с параметрами по умолчанию
+    # Пока что модель не меняется, это следующий шаг
+    st.info("На следующих этапах эта модель будет перестраиваться на основе отмеченных вами точек.")
+    
     default_truck = ParametricVehicle()
     fig = default_truck.generate_figure()
     
-    # Отображаем 3D модель
     st.plotly_chart(fig, use_container_width=True)
