@@ -1,5 +1,5 @@
 streamlit==1.31.0
 streamlit-drawable-canvas==0.9.3
-plotly==5.15.0
+plotly
 numpy
-Pillow==9.5.0
+pillow
