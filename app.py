@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 from streamlit_image_coordinates import streamlit_image_coordinates
 import numpy as np
 
@@ -31,21 +31,33 @@ with col1:
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
 
-        # --- НОВЫЙ КОМПОНЕНТ ДЛЯ ПОЛУЧЕНИЯ КООРДИНАТ ---
-        value = streamlit_image_coordinates(image, key="local")
+        # --- ИЗМЕНЕНИЕ: Рисуем точки прямо на изображении ---
+        # Создаем копию изображения, на которой будем рисовать
+        image_with_points = image.copy()
+        draw = ImageDraw.Draw(image_with_points)
+        
+        # Рисуем все ранее сохраненные точки
+        for point in st.session_state["points"]:
+            x, y = point
+            radius = 5  # Размер точки
+            draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill="red", outline="red")
+        # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-        # Если пользователь кликнул, value будет содержать координаты
+        # Используем компонент для получения координат
+        value = streamlit_image_coordinates(image_with_points, key="local")
+
+        # Если пользователь кликнул, добавляем новую точку
         if value:
             point = value["x"], value["y"]
-            # Добавляем точку в список, если ее там еще нет
             if point not in st.session_state["points"]:
                 st.session_state["points"].append(point)
+                # Перезапускаем скрипт, чтобы перерисовать изображение с новой точкой
+                st.rerun()
     
     else:
         st.info("Пожалуйста, загрузите изображение чертежа в боковой панели.")
     
     st.write("Отмеченные точки (в пикселях):")
-    # Отображаем точки в более простом виде
     if st.session_state["points"]:
         st.write(st.session_state["points"])
 
