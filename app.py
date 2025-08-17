@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+import numpy as np
 
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
 from vehicle_constructor import ParametricVehicle 
@@ -36,12 +37,16 @@ with col1:
             new_height = int(MAX_WIDTH * height / width)
             image = image.resize((MAX_WIDTH, new_height))
 
+        # --- ИЗМЕНЕНО: Конвертируем изображение в массив NumPy ---
+        # Это более стабильный способ передачи данных для многих библиотек
+        image_np = np.array(image)
+
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            # Возвращаемся к прямому использованию объекта изображения
-            background_image=image,
+            # Передаем массив NumPy вместо объекта PIL Image
+            background_image=image_np,
             update_streamlit=True,
             height=image.height,
             width=image.width,
