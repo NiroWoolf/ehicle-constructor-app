@@ -28,28 +28,29 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("2D Чертеж")
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("RGB")
-        
-        MAX_WIDTH = 700
-        width, height = image.size
-        if width > MAX_WIDTH:
-            new_height = int(MAX_WIDTH * height / width)
-            image = image.resize((MAX_WIDTH, new_height))
+    # --- ИЗМЕНЕНО: Используем uploaded_file напрямую ---
+    # Это самый надежный способ, который должен работать в облаке
+    background_image = uploaded_file if uploaded_file is not None else None
 
-        # --- ИЗМЕНЕНО: Конвертируем изображение в массив NumPy ---
-        # Это более стабильный способ передачи данных для многих библиотек
-        image_np = np.array(image)
+    if background_image is not None:
+        # Мы все еще используем PIL для получения размеров, но не для передачи в холст
+        image = Image.open(background_image)
+        width, height = image.size
+
+        # Ограничиваем ширину для отображения
+        MAX_WIDTH = 700
+        if width > MAX_WIDTH:
+            height = int(MAX_WIDTH * height / width)
+            width = MAX_WIDTH
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            # Передаем массив NumPy вместо объекта PIL Image
-            background_image=image_np,
+            background_image=background_image, # Передаем загруженный файл напрямую
             update_streamlit=True,
-            height=image.height,
-            width=image.width,
+            height=height,
+            width=width,
             drawing_mode="point",
             key="canvas",
         )
