@@ -29,10 +29,8 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("2D Чертеж")
     if uploaded_file is not None:
-        # Открываем и обрабатываем изображение с помощью PIL
         pil_image = Image.open(uploaded_file).convert("RGB")
         
-        # Рассчитываем новые размеры для отображения, сохраняя пропорции
         MAX_WIDTH = 700
         orig_width, orig_height = pil_image.size
         if orig_width > MAX_WIDTH:
@@ -43,11 +41,16 @@ with col1:
             display_width = orig_width
             display_height = orig_height
 
+        # --- ОТЛАДОЧНАЯ СТРОКА ---
+        # Показываем изображение стандартным способом, чтобы проверить, что оно корректно обрабатывается
+        st.caption("Отладочная информация: изображение, которое мы передаем в холст.")
+        st.image(pil_image)
+        # --- КОНЕЦ ОТЛАДОЧНОГО БЛОКА ---
+
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=3,
             stroke_color="red",
-            # Передаем обработанный объект изображения PIL
             background_image=pil_image, 
             update_streamlit=True,
             height=display_height,
