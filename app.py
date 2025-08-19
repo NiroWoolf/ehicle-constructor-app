@@ -55,7 +55,6 @@ with st.sidebar:
         if st.button("Рассчитать масштаб"):
             p1 = st.session_state.points[0]
             p2 = st.session_state.points[1]
-            # Для колесной базы используем расстояние по горизонтали (ось X)
             pixel_dist = calculate_pixel_distance(p1, p2, axis='x')
             
             if pixel_dist > 0:
@@ -74,23 +73,31 @@ with st.sidebar:
     st.header("2. Расчет параметров")
     st.markdown("""
     **Схема расстановки точек:**
-    - **1, 2**: Центры передней и задней оси тягача (для колесной базы).
-    - **3, 4**: Передний и задний край полуприцепа (для `trailer_length`).
-    - **5, 6**: Верхний и нижний край полуприцепа (для `trailer_height`).
-    - **7**: Передний край (бампер) тягача (для `cab_length`).
+    - **1, 2**: Центры передней и задней оси тягача.
+    - **3, 4**: Передний и задний край полуприцепа.
+    - **5, 6**: Верхний и нижний край полуприцепа.
+    - **7**: Передний край (бампер) тягача.
     """)
     if st.session_state.pixels_per_meter and len(st.session_state.points) >= 7:
+        # --- НОВОЕ: Поля для ввода ширины ---
+        st.markdown("**Введите недостающие размеры (ширину):**")
+        cab_width_m = st.number_input("Ширина кабины (м)", min_value=0.1, value=2.5, step=0.05)
+        trailer_width_m = st.number_input("Ширина полуприцепа (м)", min_value=0.1, value=2.55, step=0.05)
+        # --- КОНЕЦ НОВОГО БЛОКА ---
+
         if st.button("Перестроить 3D модель"):
             ppm = st.session_state.pixels_per_meter
             pts = st.session_state.points
             
-            # Рассчитываем параметры в метрах
             params = {
                 'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
                 'trailer_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
                 'trailer_height': calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm,
                 'cab_length': calculate_pixel_distance(pts[6], pts[0], axis='x') / ppm,
-                'wheel_diameter': calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4 # Примерное допущение
+                'wheel_diameter': calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4,
+                # Добавляем введенную ширину
+                'cab_width': cab_width_m,
+                'trailer_width': trailer_width_m
             }
             st.session_state.vehicle_params = params
             st.success("Параметры рассчитаны!")
@@ -132,17 +139,17 @@ with col1:
 with col2:
     st.subheader("3D Модель")
     
-    # Если параметры были рассчитаны, создаем новую модель. Иначе - по умолчанию.
     if st.session_state.vehicle_params:
         vp = st.session_state.vehicle_params
-        # Создаем модель с новыми, рассчитанными параметрами
-        # Некоторые параметры оставляем по умолчанию, т.к. мы их не измеряли
         truck = ParametricVehicle(
             wheelbase=vp.get('wheelbase', 3.8),
             trailer_length=vp.get('trailer_length', 13.6),
             trailer_height=vp.get('trailer_height', 2.7),
             cab_length=vp.get('cab_length', 2.2),
-            wheel_diameter=vp.get('wheel_diameter', 1.0)
+            wheel_diameter=vp.get('wheel_diameter', 1.0),
+            # Передаем ширину в конструктор
+            cab_width=vp.get('cab_width', 2.5),
+            trailer_width=vp.get('trailer_width', 2.55)
         )
     else:
         truck = ParametricVehicle()
