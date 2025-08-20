@@ -79,11 +79,9 @@ with st.sidebar:
     - **7**: Передний край (бампер) тягача.
     """)
     if st.session_state.pixels_per_meter and len(st.session_state.points) >= 7:
-        # --- НОВОЕ: Поля для ввода ширины ---
         st.markdown("**Введите недостающие размеры (ширину):**")
         cab_width_m = st.number_input("Ширина кабины (м)", min_value=0.1, value=2.5, step=0.05)
         trailer_width_m = st.number_input("Ширина полуприцепа (м)", min_value=0.1, value=2.55, step=0.05)
-        # --- КОНЕЦ НОВОГО БЛОКА ---
 
         if st.button("Перестроить 3D модель"):
             ppm = st.session_state.pixels_per_meter
@@ -94,8 +92,8 @@ with st.sidebar:
                 'trailer_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
                 'trailer_height': calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm,
                 'cab_length': calculate_pixel_distance(pts[6], pts[0], axis='x') / ppm,
-                'wheel_diameter': calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4,
-                # Добавляем введенную ширину
+                # --- ИСПРАВЛЕНИЕ: Добавлено деление на ppm ---
+                'wheel_diameter': (calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm) * 0.4,
                 'cab_width': cab_width_m,
                 'trailer_width': trailer_width_m
             }
@@ -147,7 +145,6 @@ with col2:
             trailer_height=vp.get('trailer_height', 2.7),
             cab_length=vp.get('cab_length', 2.2),
             wheel_diameter=vp.get('wheel_diameter', 1.0),
-            # Передаем ширину в конструктор
             cab_width=vp.get('cab_width', 2.5),
             trailer_width=vp.get('trailer_width', 2.55)
         )
