@@ -87,19 +87,16 @@ with st.sidebar:
             ppm = st.session_state.pixels_per_meter
             pts = st.session_state.points
             
-            # --- ИСПРАВЛЕНИЕ: Расчет диаметра колеса ---
-            # Мы используем высоту полуприцепа (точки 5 и 6) и берем от нее долю,
-            # чтобы примерно оценить диаметр колеса. Это допущение.
-            trailer_height_pixels = calculate_pixel_distance(pts[4], pts[5], axis='y')
-            # Диаметр колеса принимаем примерно равным 40% от высоты прицепа
-            wheel_diameter_pixels = trailer_height_pixels * 0.4 
+            # Расчет диаметра колеса: мы используем высоту полуприцепа (точки 5 и 6) 
+            # и берем от нее долю (40%), чтобы примерно оценить диаметр колеса.
+            wheel_diameter_m = (calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4) / ppm
             
             params = {
                 'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
                 'trailer_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
-                'trailer_height': trailer_height_pixels / ppm,
+                'trailer_height': calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm,
                 'cab_length': calculate_pixel_distance(pts[6], pts[0], axis='x') / ppm,
-                'wheel_diameter': wheel_diameter_pixels / ppm, # Теперь делим на ppm
+                'wheel_diameter': wheel_diameter_m, # Используем корректное значение в метрах
                 'cab_width': cab_width_m,
                 'trailer_width': trailer_width_m
             }
