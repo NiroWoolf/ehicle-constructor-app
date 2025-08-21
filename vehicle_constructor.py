@@ -100,4 +100,34 @@ class ParametricVehicle:
         centers_rear_tractor = [(self.rear_axle_pos_x, y, self.wheel_radius) for y in [y_left+self.wheel_width*1.5, y_left-self.wheel_width*0.5, y_right-self.wheel_width*0.5, y_right+self.wheel_width*1.5]]
         for center in centers_rear_tractor: wheels.extend(self._create_cylinder(center, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
         trailer_axle_x = self.trailer_start_x + self.trailer_length - self.trailer_axle_position_from_rear
-        centers_trailer = [(trailer_axle_x, y, self.whe
+        centers_trailer = [(trailer_axle_x, y, self.wheel_radius) for y in [y_left+self.wheel_width*1.5, y_left-self.wheel_width*0.5, y_right-self.wheel_width*0.5, y_right+self.wheel_width*1.5]]
+        for center in centers_trailer: wheels.extend(self._create_cylinder(center, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
+        return wheels
+
+    def _create_trailer_body(self):
+        origin = (self.trailer_start_x, 0, self.frame_level_z)
+        return self._create_cuboid(origin, (self.trailer_length, self.trailer_width, self.trailer_height), color='lightcoral', name='Кузов полуприцепа')
+
+    def _create_trailer_frame(self):
+        frame_width, frame_height = 1.0, 0.2
+        origin = (self.trailer_start_x, (self.trailer_width - frame_width)/2, self.frame_level_z - frame_height)
+        return self._create_cuboid(origin, (self.trailer_length, frame_width, frame_height), color='dimgray', name='Рама полуприцепа')
+
+    def generate_figure(self):
+        parts = [self._create_cab(), self._create_chassis(), self._create_saddle(), self._create_trailer_body(), self._create_trailer_frame()]
+        parts.extend(self._create_wheels())
+        fig = go.Figure(data=parts)
+        
+        fig.update_layout(
+            title='Параметрическая 3D модель',
+            scene=dict(
+                xaxis=dict(title='Длина (X)'),
+                yaxis=dict(title='Ширина (Y)'),
+                zaxis=dict(title='Высота (Z)'),
+                aspectmode='data',
+                # --- НОВОЕ ИЗМЕНЕНИЕ: Явно задаем соотношение сторон ---
+                aspectratio=dict(x=1, y=1, z=1)
+            ),
+            margin=dict(l=10, r=10, b=10, t=40)
+        )
+        return fig
