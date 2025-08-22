@@ -10,6 +10,7 @@ class ParametricVehicle:
                  # Параметры тягача
                  cab_length=2.2, cab_width=2.5, cab_height=2.8,
                  wheelbase=3.8, saddle_position_from_rear_axle=0.5,
+                 front_axle_pos_x=1.0, # НОВЫЙ ПАРАМЕТР
                  num_tractor_rear_axles=2, tractor_rear_axle_spacing=1.3,
                  # Параметры колес
                  wheel_diameter=1.0, wheel_width=0.4,
@@ -23,6 +24,7 @@ class ParametricVehicle:
         self.cab_height = cab_height
         self.wheelbase = wheelbase
         self.saddle_position_from_rear_axle = saddle_position_from_rear_axle
+        self.front_axle_pos_x = front_axle_pos_x
         self.num_tractor_rear_axles = num_tractor_rear_axles
         self.tractor_rear_axle_spacing = tractor_rear_axle_spacing
         self.wheel_diameter = wheel_diameter
@@ -38,7 +40,7 @@ class ParametricVehicle:
         # Внутренние расчетные параметры для позиционирования
         self.wheel_radius = self.wheel_diameter / 2
         self.frame_level_z = self.wheel_diameter * 1.1
-        self.front_axle_pos_x = self.cab_length * 0.4
+        # ИСПРАВЛЕНО: Позиции осей теперь рассчитываются от переданного front_axle_pos_x
         self.rear_axle_pos_x = self.front_axle_pos_x + self.wheelbase
         self.saddle_pos_x = self.rear_axle_pos_x + self.saddle_position_from_rear_axle
         self.trailer_start_x = self.saddle_pos_x - self.kingpin_offset
@@ -100,33 +102,20 @@ class ParametricVehicle:
         y_left = (self.trailer_width - track_width) / 2 - self.wheel_width / 2
         y_right = self.trailer_width - y_left - self.wheel_width
         
-        # Передние колеса
         center_fl = (self.front_axle_pos_x, y_left + self.wheel_width/2, self.wheel_radius)
         center_fr = (self.front_axle_pos_x, y_right + self.wheel_width/2, self.wheel_radius)
         wheels.extend(self._create_cylinder(center_fl, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
         wheels.extend(self._create_cylinder(center_fr, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
 
-        # Задние оси тягача (сдвоенные)
         for i in range(self.num_tractor_rear_axles):
             axle_x = self.rear_axle_pos_x - (i * self.tractor_rear_axle_spacing)
-            centers = [
-                (axle_x, y_left + self.wheel_width*1.5, self.wheel_radius),
-                (axle_x, y_left - self.wheel_width*0.5, self.wheel_radius),
-                (axle_x, y_right - self.wheel_width*0.5, self.wheel_radius),
-                (axle_x, y_right + self.wheel_width*1.5, self.wheel_radius)
-            ]
+            centers = [(axle_x, y, self.wheel_radius) for y in [y_left+self.wheel_width*1.5, y_left-self.wheel_width*0.5, y_right-self.wheel_width*0.5, y_right+self.wheel_width*1.5]]
             for center in centers: wheels.extend(self._create_cylinder(center, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
 
-        # Оси прицепа (сдвоенные)
         trailer_axle_base_x = self.trailer_start_x + self.trailer_length - self.trailer_axle_position_from_rear
         for i in range(self.num_trailer_axles):
             axle_x = trailer_axle_base_x - (i * self.trailer_axle_spacing)
-            centers = [
-                (axle_x, y_left + self.wheel_width*1.5, self.wheel_radius),
-                (axle_x, y_left - self.wheel_width*0.5, self.wheel_radius),
-                (axle_x, y_right - self.wheel_width*0.5, self.wheel_radius),
-                (axle_x, y_right + self.wheel_width*1.5, self.wheel_radius)
-            ]
+            centers = [(axle_x, y, self.wheel_radius) for y in [y_left+self.wheel_width*1.5, y_left-self.wheel_width*0.5, y_right-self.wheel_width*0.5, y_right+self.wheel_width*1.5]]
             for center in centers: wheels.extend(self._create_cylinder(center, self.wheel_radius, self.wheel_width, axis='y', name='Колесо'))
         
         return wheels
