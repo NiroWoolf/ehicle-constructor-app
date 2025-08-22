@@ -67,14 +67,15 @@ with st.sidebar:
         st.info("Масштаб не рассчитан.")
 
     st.header("2. Расчет параметров")
+    # --- ИЗМЕНЕННАЯ СХЕМА ТОЧЕК ---
     st.markdown("""
     **Схема расстановки точек:**
-    - **1, 2**: Центры передней и **первой задней** оси тягача.
-    - **3, 4**: Передний и задний край полуприцепа.
-    - **5, 6**: Верхний и нижний край полуприцепа.
-    - **7**: Передний край (бампер) тягача.
-    - **8**: Центр седла тягача.
-    - **9**: Центр шкворня полуприцепа.
+    - **1, 2**: Центры передней и **первой задней** оси тягача (для калибровки).
+    - **3**: Передний край (бампер) тягача.
+    - **4**: Задний край кабины.
+    - **5**: Центр **точки сцепки** (седло/шкворень).
+    - **6, 7**: Передний и задний край полуприцепа.
+    - **8, 9**: Верхний и нижний край полуприцепа.
     - **10**: Центр **первой** оси полуприцепа.
     """)
     MIN_POINTS_FOR_REBUILD = 10
@@ -83,7 +84,6 @@ with st.sidebar:
         cab_width_m = st.number_input("Ширина кабины (м)", min_value=0.1, value=2.5, step=0.05)
         trailer_width_m = st.number_input("Ширина полуприцепа (м)", min_value=0.1, value=2.55, step=0.05)
         
-        # --- НОВЫЕ ПОЛЯ ДЛЯ ОСЕЙ ---
         st.markdown("**Конфигурация осей:**")
         num_tractor_rear_axles = st.number_input("Кол-во задних осей тягача", min_value=1, value=2, step=1)
         tractor_rear_axle_spacing = st.number_input("Расстояние между осями тягача (м)", min_value=0.1, value=1.3, step=0.1)
@@ -94,15 +94,16 @@ with st.sidebar:
             ppm = st.session_state.pixels_per_meter
             pts = st.session_state.points
             
+            # --- ИСПРАВЛЕННАЯ ЛОГИКА РАСЧЕТОВ ---
             params = {
                 'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
-                'trailer_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
-                'trailer_height': calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm,
-                'cab_length': calculate_pixel_distance(pts[6], pts[0], axis='x') / ppm,
-                'saddle_position_from_rear_axle': calculate_pixel_distance(pts[1], pts[7], axis='x') / ppm,
-                'kingpin_offset': calculate_pixel_distance(pts[2], pts[8], axis='x') / ppm,
-                'trailer_axle_position_from_rear': calculate_pixel_distance(pts[9], pts[3], axis='x') / ppm,
-                'wheel_diameter': (calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4) / ppm,
+                'cab_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
+                'saddle_position_from_rear_axle': calculate_pixel_distance(pts[1], pts[4], axis='x') / ppm,
+                'trailer_length': calculate_pixel_distance(pts[5], pts[6], axis='x') / ppm,
+                'kingpin_offset': calculate_pixel_distance(pts[5], pts[4], axis='x') / ppm,
+                'trailer_height': calculate_pixel_distance(pts[7], pts[8], axis='y') / ppm,
+                'trailer_axle_position_from_rear': calculate_pixel_distance(pts[9], pts[6], axis='x') / ppm,
+                'wheel_diameter': (calculate_pixel_distance(pts[7], pts[8], axis='y') * 0.4) / ppm,
                 'cab_width': cab_width_m,
                 'trailer_width': trailer_width_m,
                 'num_tractor_rear_axles': num_tractor_rear_axles,
