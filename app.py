@@ -67,10 +67,9 @@ with st.sidebar:
         st.info("Масштаб не рассчитан.")
 
     st.header("2. Расчет параметров")
-    # --- ИЗМЕНЕННАЯ СХЕМА ТОЧЕК ---
     st.markdown("""
     **Схема расстановки точек:**
-    - **1, 2**: Центры передней и **первой задней** оси тягача (для калибровки).
+    - **1, 2**: Центры передней и **первой задней** оси тягача.
     - **3**: Передний край (бампер) тягача.
     - **4**: Задний край кабины.
     - **5**: Центр **точки сцепки** (седло/шкворень).
@@ -94,8 +93,8 @@ with st.sidebar:
             ppm = st.session_state.pixels_per_meter
             pts = st.session_state.points
             
-            # --- ИСПРАВЛЕННАЯ ЛОГИКА РАСЧЕТОВ ---
             params = {
+                'front_axle_pos_x': calculate_pixel_distance(pts[2], pts[0], axis='x') / ppm,
                 'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
                 'cab_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
                 'saddle_position_from_rear_axle': calculate_pixel_distance(pts[1], pts[4], axis='x') / ppm,
