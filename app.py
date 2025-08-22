@@ -39,6 +39,12 @@ if st.sidebar.button("Сбросить точки"):
     st.session_state["vehicle_params"] = {}
     st.rerun()
 
+# --- НОВОЕ: Кнопка для удаления последней точки ---
+if st.sidebar.button("Удалить последнюю точку"):
+    if st.session_state.points:
+        st.session_state.points.pop()
+        st.rerun()
+
 st.sidebar.info("Кликните на чертеж, чтобы отметить ключевые точки.")
 
 # --- Секция калибровки в боковой панели ---
@@ -77,8 +83,12 @@ with st.sidebar:
     - **3, 4**: Передний и задний край полуприцепа.
     - **5, 6**: Верхний и нижний край полуприцепа.
     - **7**: Передний край (бампер) тягача.
+    - **8**: Центр седла тягача.
+    - **9**: Центр шкворня полуприцепа.
+    - **10**: Центр оси полуприцепа.
     """)
-    if st.session_state.pixels_per_meter and len(st.session_state.points) >= 7:
+    MIN_POINTS_FOR_REBUILD = 10
+    if st.session_state.pixels_per_meter and len(st.session_state.points) >= MIN_POINTS_FOR_REBUILD:
         st.markdown("**Введите недостающие размеры (ширину):**")
         cab_width_m = st.number_input("Ширина кабины (м)", min_value=0.1, value=2.5, step=0.05)
         trailer_width_m = st.number_input("Ширина полуприцепа (м)", min_value=0.1, value=2.55, step=0.05)
@@ -87,16 +97,15 @@ with st.sidebar:
             ppm = st.session_state.pixels_per_meter
             pts = st.session_state.points
             
-            # Расчет диаметра колеса: мы используем высоту полуприцепа (точки 5 и 6) 
-            # и берем от нее долю (40%), чтобы примерно оценить диаметр колеса.
-            wheel_diameter_m = (calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4) / ppm
-            
             params = {
                 'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
                 'trailer_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
                 'trailer_height': calculate_pixel_distance(pts[4], pts[5], axis='y') / ppm,
                 'cab_length': calculate_pixel_distance(pts[6], pts[0], axis='x') / ppm,
-                'wheel_diameter': wheel_diameter_m, # Используем корректное значение в метрах
+                'saddle_position_from_rear_axle': calculate_pixel_distance(pts[1], pts[7], axis='x') / ppm,
+                'kingpin_offset': calculate_pixel_distance(pts[2], pts[8], axis='x') / ppm,
+                'trailer_axle_position_from_rear': calculate_pixel_distance(pts[9], pts[3], axis='x') / ppm,
+                'wheel_diameter': (calculate_pixel_distance(pts[4], pts[5], axis='y') * 0.4) / ppm,
                 'cab_width': cab_width_m,
                 'trailer_width': trailer_width_m
             }
@@ -104,7 +113,7 @@ with st.sidebar:
             st.success("Параметры рассчитаны!")
             st.write(params)
     else:
-        st.warning("Рассчитайте масштаб и отметьте минимум 7 точек.")
+        st.warning(f"Рассчитайте масштаб и отметьте минимум {MIN_POINTS_FOR_REBUILD} точек.")
 
 
 # --- Основная область ---
@@ -149,7 +158,10 @@ with col2:
             cab_length=vp.get('cab_length', 2.2),
             wheel_diameter=vp.get('wheel_diameter', 1.0),
             cab_width=vp.get('cab_width', 2.5),
-            trailer_width=vp.get('trailer_width', 2.55)
+            trailer_width=vp.get('trailer_width', 2.55),
+            saddle_position_from_rear_axle=vp.get('saddle_position_from_rear_axle', 0.5),
+            kingpin_offset=vp.get('kingpin_offset', 1.2),
+            trailer_axle_position_from_rear=vp.get('trailer_axle_position_from_rear', 1.3)
         )
     else:
         truck = ParametricVehicle()
