@@ -84,8 +84,10 @@ class Tractor:
     def get_components(self, x_offset=0, y_offset=0, z_offset=0, overall_width=2.55):
         """Возвращает список всех 3D компонентов тягача со смещением."""
         parts = []
+        cab_y_offset = y_offset + (overall_width - self.cab_width) / 2
+        
         # Кабина
-        parts.append(_create_cuboid((x_offset, y_offset + (overall_width - self.cab_width) / 2, z_offset + self.frame_level_z), 
+        parts.append(_create_cuboid((x_offset, cab_y_offset, z_offset + self.frame_level_z), 
                                    (self.cab_length, self.cab_width, self.cab_height), 'royalblue', 'Кабина'))
         # Рама
         chassis_len = self.first_rear_axle_pos + self.wheel_radius * 2
@@ -100,13 +102,13 @@ class Tractor:
         y_right_local = self.cab_width - y_left_local
         
         # Передние
-        parts.extend(_create_cylinder((x_offset + self.front_axle_pos, y_offset + y_left_local, z_offset + self.wheel_radius), self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
-        parts.extend(_create_cylinder((x_offset + self.front_axle_pos, y_offset + y_right_local, z_offset + self.wheel_radius), self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
+        parts.extend(_create_cylinder((x_offset + self.front_axle_pos, cab_y_offset + y_left_local, z_offset + self.wheel_radius), self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
+        parts.extend(_create_cylinder((x_offset + self.front_axle_pos, cab_y_offset + y_right_local, z_offset + self.wheel_radius), self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
         
         # Задние
         for i in range(self.num_rear_axles):
             axle_x = self.first_rear_axle_pos - (i * self.rear_axle_spacing)
-            centers = [(x_offset + axle_x, y_offset + y, z_offset + self.wheel_radius) for y in [y_left_local - self.wheel_width, y_left_local + self.wheel_width, y_right_local - self.wheel_width, y_right_local + self.wheel_width]]
+            centers = [(x_offset + axle_x, cab_y_offset + y, z_offset + self.wheel_radius) for y in [y_left_local - self.wheel_width/2, y_left_local + self.wheel_width/2, y_right_local - self.wheel_width/2, y_right_local + self.wheel_width/2]]
             for center in centers: parts.extend(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
 
         return parts
@@ -143,7 +145,7 @@ class SemiTrailer:
         first_axle_pos = x_offset + self.length - self.axle_pos_from_rear
         for i in range(self.num_axles):
             axle_x = first_axle_pos - (i * self.axle_spacing)
-            centers = [(axle_x, y_offset + y, z_offset - 0.2 - self.wheel_radius) for y in [y_left_local - self.wheel_width, y_left_local + self.wheel_width, y_right_local - self.wheel_width, y_right_local + self.wheel_width]]
+            centers = [(axle_x, y_offset + y, z_offset - 0.2 - self.wheel_radius) for y in [y_left_local - self.wheel_width/2, y_left_local + self.wheel_width/2, y_right_local - self.wheel_width/2, y_right_local + self.wheel_width/2]]
             for center in centers: parts.extend(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
             
         return parts
@@ -194,7 +196,7 @@ class Van:
         first_rear_axle_pos = self.front_axle_pos + self.wheelbase
         for i in range(self.num_rear_axles):
             axle_x = first_rear_axle_pos - (i * self.rear_axle_spacing)
-            centers = [(x_offset + axle_x, y_offset + y, z_offset + self.wheel_radius) for y in [y_left_local - self.wheel_width, y_left_local + self.wheel_width, y_right_local - self.wheel_width, y_right_local + self.wheel_width]]
+            centers = [(x_offset + axle_x, y_offset + y, z_offset + self.wheel_radius) for y in [y_left_local - self.wheel_width/2, y_left_local + self.wheel_width/2, y_right_local - self.wheel_width/2, y_right_local + self.wheel_width/2]]
             for center in centers: parts.extend(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
             
         return parts
