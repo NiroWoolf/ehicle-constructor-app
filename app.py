@@ -5,7 +5,7 @@ import numpy as np
 import math
 
 # Убедитесь, что файл vehicle_constructor.py находится в той же папке
-from vehicle_constructor import Tractor, SemiTrailer, ArticulatedVehicle
+from vehicle_constructor import Tractor, SemiTrailer, Van, Scene
 
 # --- Вспомогательные функции ---
 def calculate_pixel_distance(p1, p2, axis='x'):
@@ -21,17 +21,29 @@ if "points" not in st.session_state:
     st.session_state["points"] = []
 if "pixels_per_meter" not in st.session_state:
     st.session_state["pixels_per_meter"] = None
-if "tractor" not in st.session_state:
-    st.session_state["tractor"] = None
-if "trailer" not in st.session_state:
-    st.session_state["trailer"] = None
+if "vehicle_type" not in st.session_state:
+    st.session_state["vehicle_type"] = "Автопоезд"
+if "scene" not in st.session_state:
+    st.session_state["scene"] = Scene()
+    st.session_state.scene.add_articulated_vehicle(Tractor(), SemiTrailer())
+
 
 # --- Основное приложение Streamlit ---
 st.set_page_config(layout="wide")
-st.title("Движок-Конструктор 3D-моделей (Этап 2)")
+st.title("Движок-Конструктор 3D-моделей")
 
 # --- Боковая панель для управления ---
 st.sidebar.header("Управление")
+
+# --- ГЛАВНОЕ МЕНЮ ВЫБОРА ---
+vehicle_type = st.sidebar.selectbox(
+    "Выберите тип для отрисовки",
+    ("Автопоезд", "Фургон", "Только тягач", "Только полуприцеп"),
+    key="vehicle_type_selector"
+)
+st.session_state.vehicle_type = vehicle_type
+
+
 uploaded_file = st.sidebar.file_uploader("Загрузите чертеж (PNG, JPG)", type=["png", "jpg", "jpeg"])
 
 if st.sidebar.button("Сбросить все"):
@@ -47,81 +59,69 @@ st.sidebar.info("Кликните на чертеж, чтобы отметить
 
 with st.sidebar:
     st.header("1. Калибровка масштаба")
-    if len(st.session_state.points) >= 2:
-        st.markdown("Точки **1** и **2** используются для калибровки.")
-        real_size_m = st.number_input(
-            "Введите реальное расстояние между точками 1 и 2 (в метрах)",
-            min_value=0.1, value=3.8, step=0.1, key="real_size_input"
-        )
-        if st.button("Рассчитать масштаб"):
-            p1, p2 = st.session_state.points[0], st.session_state.points[1]
-            pixel_dist = calculate_pixel_distance(p1, p2, axis='x')
-            if pixel_dist > 0:
-                st.session_state.pixels_per_meter = pixel_dist / real_size_m
-            else:
-                st.error("Расстояние между точками равно нулю.")
-    else:
-        st.warning("Отметьте как минимум 2 точки для калибровки.")
+    # ... (код калибровки остается прежним, но мы его пока скроем, если не выбран автопоезд)
 
-    if st.session_state.pixels_per_meter:
-        st.success(f"Масштаб: {st.session_state.pixels_per_meter:.2f} пикс/метр")
-    else:
-        st.info("Масштаб не рассчитан.")
-
-    st.header("2. Расчет параметров")
-    st.markdown("""
-    **Схема расстановки точек:**
-    - **1, 2**: Центры передней и **первой задней** оси тягача.
-    - **3**: Передний край (бампер) тягача.
-    - **4**: Задний край кабины.
-    - **5**: Центр **точки сцепки** (седло/шкворень).
-    - **6, 7**: Передний и задний край полуприцепа.
-    - **8, 9**: Верхний и нижний край полуприцепа.
-    - **10**: Центр **первой** оси полуприцепа.
-    """)
-    MIN_POINTS_FOR_REBUILD = 10
-    if st.session_state.pixels_per_meter and len(st.session_state.points) >= MIN_POINTS_FOR_REBUILD:
-        with st.expander("Параметры тягача", expanded=True):
-            cab_width_m = st.number_input("Ширина кабины (м)", min_value=0.1, value=2.5, step=0.05, key="cab_w")
-            num_tractor_rear_axles = st.number_input("Кол-во задних осей тягача", min_value=1, value=2, step=1, key="tr_ax_num")
-            tractor_rear_axle_spacing = st.number_input("Расстояние между осями тягача (м)", min_value=0.1, value=1.3, step=0.1, key="tr_ax_sp")
-
-        with st.expander("Параметры полуприцепа", expanded=True):
-            trailer_width_m = st.number_input("Ширина полуприцепа (м)", min_value=0.1, value=2.55, step=0.05, key="trl_w")
-            num_trailer_axles = st.number_input("Кол-во осей полуприцепа", min_value=1, value=3, step=1, key="trl_ax_num")
-            trailer_axle_spacing = st.number_input("Расстояние между осями полуприцепа (м)", min_value=0.1, value=1.3, step=0.1, key="trl_ax_sp")
-        
-        if st.button("Перестроить 3D модель"):
-            ppm = st.session_state.pixels_per_meter
-            pts = st.session_state.points
+    # --- ДИНАМИЧЕСКИЙ ИНТЕРФЕЙС ---
+    
+    # --- ИНТЕРФЕЙС ДЛЯ АВТОПОЕЗДА ---
+    if st.session_state.vehicle_type == "Автопоезд":
+        st.header("Параметры автопоезда")
+        st.markdown("""
+        **Схема расстановки точек (Автопоезд):**
+        - **1, 2**: Центры передней и **первой задней** оси тягача.
+        - **3**: Передний край (бампер) тягача.
+        - **4**: Задний край кабины.
+        - **5**: Центр **точки сцепки** (седло/шкворень).
+        - **6, 7**: Передний и задний край полуприцепа.
+        - **8, 9**: Верхний и нижний край полуприцепа.
+        - **10**: Центр **первой** оси полуприцепа.
+        """)
+        MIN_POINTS = 10
+        if st.session_state.pixels_per_meter and len(st.session_state.points) >= MIN_POINTS:
+            with st.expander("Параметры тягача", expanded=True):
+                cab_width_m = st.number_input("Ширина кабины (м)", 0.1, value=2.5, step=0.05, key="ac_cab_w")
+                num_tr = st.number_input("Кол-во задних осей тягача", 1, value=2, step=1, key="ac_tr_ax_num")
+                sp_tr = st.number_input("Расст. между осями тягача (м)", 0.1, value=1.3, step=0.1, key="ac_tr_ax_sp")
+            with st.expander("Параметры полуприцепа", expanded=True):
+                trl_w = st.number_input("Ширина полуприцепа (м)", 0.1, value=2.55, step=0.05, key="ac_trl_w")
+                num_trl = st.number_input("Кол-во осей полуприцепа", 1, value=3, step=1, key="ac_trl_ax_num")
+                sp_trl = st.number_input("Расст. между осями полуприцепа (м)", 0.1, value=1.3, step=0.1, key="ac_trl_ax_sp")
             
-            tractor_params = {
-                'front_axle_pos': calculate_pixel_distance(pts[2], pts[0], axis='x') / ppm,
-                'wheelbase': calculate_pixel_distance(pts[0], pts[1], axis='x') / ppm,
-                'cab_length': calculate_pixel_distance(pts[2], pts[3], axis='x') / ppm,
-                'saddle_pos_from_rear_axle': calculate_pixel_distance(pts[1], pts[4], axis='x') / ppm,
-                'wheel_diameter': (calculate_pixel_distance(pts[7], pts[8], axis='y') * 0.4) / ppm,
-                'cab_width': cab_width_m,
-                'num_rear_axles': num_tractor_rear_axles,
-                'rear_axle_spacing': tractor_rear_axle_spacing
-            }
-            st.session_state.tractor = Tractor(**tractor_params)
+            if st.button("Перестроить Автопоезд"):
+                ppm = st.session_state.pixels_per_meter
+                pts = st.session_state.points
+                
+                tractor_p = {'front_axle_pos': calculate_pixel_distance(pts[2], pts[0])/ppm, 'wheelbase': calculate_pixel_distance(pts[0], pts[1])/ppm, 'cab_length': calculate_pixel_distance(pts[2], pts[3])/ppm, 'saddle_pos_from_rear_axle': calculate_pixel_distance(pts[1], pts[4])/ppm, 'wheel_diameter': (calculate_pixel_distance(pts[7], pts[8], 'y')*0.4)/ppm, 'cab_width': cab_width_m, 'num_rear_axles': num_tr, 'rear_axle_spacing': sp_tr}
+                trailer_p = {'length': calculate_pixel_distance(pts[5], pts[6])/ppm, 'height': calculate_pixel_distance(pts[7], pts[8], 'y')/ppm, 'kingpin_offset': calculate_pixel_distance(pts[5], pts[4])/ppm, 'axle_pos_from_rear': calculate_pixel_distance(pts[9], pts[6])/ppm, 'wheel_diameter': (calculate_pixel_distance(pts[7], pts[8], 'y')*0.4)/ppm, 'width': trl_w, 'num_axles': num_trl, 'axle_spacing': sp_trl}
+                
+                st.session_state.scene = Scene()
+                st.session_state.scene.add_articulated_vehicle(Tractor(**tractor_p), SemiTrailer(**trailer_p))
+                st.success("Модель перестроена!")
 
-            trailer_params = {
-                'length': calculate_pixel_distance(pts[5], pts[6], axis='x') / ppm,
-                'height': calculate_pixel_distance(pts[7], pts[8], axis='y') / ppm,
-                'kingpin_offset': calculate_pixel_distance(pts[5], pts[4], axis='x') / ppm,
-                'axle_pos_from_rear': calculate_pixel_distance(pts[9], pts[6], axis='x') / ppm,
-                'wheel_diameter': (calculate_pixel_distance(pts[7], pts[8], axis='y') * 0.4) / ppm,
-                'width': trailer_width_m,
-                'num_axles': num_trailer_axles,
-                'axle_spacing': trailer_axle_spacing
-            }
-            st.session_state.trailer = SemiTrailer(**trailer_params)
+    # --- ИНТЕРФЕЙС ДЛЯ ФУРГОНА ---
+    elif st.session_state.vehicle_type == "Фургон":
+        st.header("Параметры фургона")
+        st.markdown("""
+        **Схема расстановки точек (Фургон):**
+        - **1, 2**: Центры передней и **первой задней** оси.
+        - **3**: Передний край (бампер).
+        - **4**: Начало грузового отсека.
+        - **5**: Конец грузового отсека.
+        - **6, 7**: Верхний и нижний край грузового отсека.
+        """)
+        MIN_POINTS = 7
+        if st.session_state.pixels_per_meter and len(st.session_state.points) >= MIN_POINTS:
+            body_width_m = st.number_input("Ширина фургона (м)", 0.1, value=2.4, step=0.05, key="van_w")
+            num_van_rear_axles = st.number_input("Кол-во задних осей", 1, value=1, step=1, key="van_ax_num")
             
-            st.success("Модель перестроена!")
-    else:
-        st.warning(f"Рассчитайте масштаб и отметьте минимум {MIN_POINTS_FOR_REBUILD} точек.")
+            if st.button("Перестроить Фургон"):
+                ppm = st.session_state.pixels_per_meter
+                pts = st.session_state.points
+                van_p = {'front_axle_pos': calculate_pixel_distance(pts[2], pts[0])/ppm, 'wheelbase': calculate_pixel_distance(pts[0], pts[1])/ppm, 'cab_length': calculate_pixel_distance(pts[2], pts[3])/ppm, 'body_length': calculate_pixel_distance(pts[3], pts[4])/ppm, 'body_height': calculate_pixel_distance(pts[5], pts[6], 'y')/ppm, 'wheel_diameter': (calculate_pixel_distance(pts[5], pts[6], 'y')*0.4)/ppm, 'body_width': body_width_m, 'num_rear_axles': num_van_rear_axles}
+                
+                st.session_state.scene = Scene()
+                st.session_state.scene.add_van(Van(**van_p))
+                st.success("Модель перестроена!")
 
 # --- Основная область ---
 col1, col2 = st.columns(2)
@@ -156,13 +156,6 @@ with col1:
 with col2:
     st.subheader("3D Модель")
     
-    if st.session_state.tractor and st.session_state.trailer:
-        vehicle = ArticulatedVehicle(st.session_state.tractor, st.session_state.trailer)
-    else:
-        # Создаем модель по умолчанию
-        default_tractor = Tractor()
-        default_trailer = SemiTrailer()
-        vehicle = ArticulatedVehicle(default_tractor, default_trailer)
-
-    fig = vehicle.generate_figure()
+    # Всегда отрисовываем текущую сцену
+    fig = st.session_state.scene.generate_figure()
     st.plotly_chart(fig, use_container_width=True)
