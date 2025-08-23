@@ -15,14 +15,17 @@ def calculate_pixel_distance(p1, p2, axis='x'):
 
 # --- Инициализация состояния ---
 def init_state():
+    """Инициализирует состояние сессии при первом запуске."""
     if "points" not in st.session_state: st.session_state["points"] = []
     if "pixels_per_meter" not in st.session_state: st.session_state["pixels_per_meter"] = None
     if "vehicle_type" not in st.session_state: st.session_state["vehicle_type"] = "Сборка автопоезда"
     if "library" not in st.session_state: st.session_state["library"] = {}
-    # Добавляем объекты по умолчанию для первоначального отображения
-    if "default_tractor" not in st.session_state: st.session_state["default_tractor"] = Tractor()
-    if "default_trailer" not in st.session_state: st.session_state["default_trailer"] = SemiTrailer()
-    if "default_van" not in st.session_state: st.session_state["default_van"] = Van()
+    
+    # ИСПРАВЛЕНИЕ: Инициализируем объекты, которые будут отображаться на сцене,
+    # чтобы они всегда существовали в состоянии сессии.
+    if "tractor_obj" not in st.session_state: st.session_state["tractor_obj"] = Tractor()
+    if "trailer_obj" not in st.session_state: st.session_state["trailer_obj"] = SemiTrailer()
+    if "van_obj" not in st.session_state: st.session_state["van_obj"] = Van()
 
 init_state()
 
@@ -99,6 +102,7 @@ with st.sidebar:
                     st.error("Тягач с таким именем уже существует!")
                 else:
                     st.session_state.library[unique_name] = new_tractor
+                    st.session_state.tractor_obj = new_tractor # Обновляем текущий объект для отображения
                     st.success(f"Тягач '{unique_name}' сохранен!")
 
     # --- ИНТЕРФЕЙС ДЛЯ ПРИЦЕПА ---
@@ -129,6 +133,7 @@ with st.sidebar:
                     st.error("Прицеп с таким именем уже существует!")
                 else:
                     st.session_state.library[unique_name] = new_trailer
+                    st.session_state.trailer_obj = new_trailer # Обновляем текущий объект для отображения
                     st.success(f"Прицеп '{unique_name}' сохранен!")
 
     # --- ИНТЕРФЕЙС ДЛЯ СБОРКИ АВТОПОЕЗДА ---
@@ -143,6 +148,7 @@ with st.sidebar:
             selected_tractor_name = st.selectbox("Выберите тягач", list(tractors_in_library.keys()))
             selected_trailer_name = st.selectbox("Выберите полуприцеп", list(trailers_in_library.keys()))
             
+            # Обновляем текущие объекты для отображения при выборе из списка
             st.session_state.tractor_obj = tractors_in_library[selected_tractor_name]
             st.session_state.trailer_obj = trailers_in_library[selected_trailer_name]
 
@@ -185,11 +191,11 @@ with col2:
     if vehicle_type == "Сборка автопоезда":
         scene.add_articulated_vehicle(st.session_state.tractor_obj, st.session_state.trailer_obj)
     elif vehicle_type == "Создать тягач":
-        scene.add(st.session_state.get('tractor_obj', Tractor()))
+        scene.add(st.session_state.tractor_obj)
     elif vehicle_type == "Создать прицеп":
-        scene.add(st.session_state.get('trailer_obj', SemiTrailer()))
+        scene.add(st.session_state.trailer_obj)
     elif vehicle_type == "Создать фургон":
-        scene.add(st.session_state.get('van_obj', Van()))
+        scene.add(st.session_state.van_obj)
 
     fig = scene.generate_figure()
     st.plotly_chart(fig, use_container_width=True)
