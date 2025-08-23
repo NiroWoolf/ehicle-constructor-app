@@ -236,7 +236,7 @@ class Scene:
 
     def add_articulated_vehicle(self, tractor: Tractor, trailer: SemiTrailer):
         trailer_start_x = tractor.saddle_pos - trailer.kingpin_offset
-        self.components.extend(tractor.get_components())
+        self.components.extend(tractor.get_components(y_offset=(trailer.width - tractor.cab_width) / 2))
         self.components.extend(trailer.get_components(trailer_start_x, 0, tractor.frame_level_z))
 
     def generate_figure(self):
