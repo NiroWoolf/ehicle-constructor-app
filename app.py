@@ -17,8 +17,12 @@ def calculate_pixel_distance(p1, p2, axis='x'):
 def init_state():
     if "points" not in st.session_state: st.session_state["points"] = []
     if "pixels_per_meter" not in st.session_state: st.session_state["pixels_per_meter"] = None
-    if "vehicle_type" not in st.session_state: st.session_state["vehicle_type"] = "Автопоезд"
+    if "vehicle_type" not in st.session_state: st.session_state["vehicle_type"] = "Сборка автопоезда"
     if "library" not in st.session_state: st.session_state["library"] = {}
+    # Добавляем объекты по умолчанию для первоначального отображения
+    if "default_tractor" not in st.session_state: st.session_state["default_tractor"] = Tractor()
+    if "default_trailer" not in st.session_state: st.session_state["default_trailer"] = SemiTrailer()
+    if "default_van" not in st.session_state: st.session_state["default_van"] = Van()
 
 init_state()
 
@@ -50,7 +54,6 @@ if st.sidebar.button("Удалить последнюю точку"):
 # --- Динамический интерфейс в боковой панели ---
 with st.sidebar:
     
-    # --- ИНТЕРФЕЙС СОЗДАНИЯ (ОБЩИЙ ДЛЯ ТЯГАЧА, ПРИЦЕПА, ФУРГОНА) ---
     if vehicle_type != "Сборка автопоезда":
         st.info("Кликните на чертеж, чтобы отметить ключевые точки.")
         st.header("1. Калибровка масштаба")
@@ -140,10 +143,8 @@ with st.sidebar:
             selected_tractor_name = st.selectbox("Выберите тягач", list(tractors_in_library.keys()))
             selected_trailer_name = st.selectbox("Выберите полуприцеп", list(trailers_in_library.keys()))
             
-            if st.button("Собрать автопоезд"):
-                st.session_state.tractor_obj = tractors_in_library[selected_tractor_name]
-                st.session_state.trailer_obj = trailers_in_library[selected_trailer_name]
-                st.success("Автопоезд собран!")
+            st.session_state.tractor_obj = tractors_in_library[selected_tractor_name]
+            st.session_state.trailer_obj = trailers_in_library[selected_trailer_name]
 
 # --- Основная область ---
 col1, col2 = st.columns(2)
