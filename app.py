@@ -202,3 +202,4 @@ with col2:
 
 st.sidebar.header("Библиотека")
 st.sidebar.write(list(st.session_state.library.keys()))
+
