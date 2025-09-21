@@ -76,20 +76,24 @@ class Tractor:
         """Возвращает список всех 3D компонентов тягача со смещением."""
         parts = []
         
+        # TODO: Заменить на загрузку .gltf модели кабины
         # Кабина
-        parts.append(_create_cuboid((x_offset, y_offset, z_offset + self.frame_level_z), 
+        cab_y_offset = y_offset + (self.cab_width - self.cab_width) / 2 # Центрирование
+        parts.append(_create_cuboid((x_offset, cab_y_offset, z_offset + self.frame_level_z), 
                                    (self.cab_length, self.cab_width, self.cab_height), 'royalblue', 'Кабина'))
+        
         # Рама
         chassis_len = self.first_rear_axle_pos + (self.num_rear_axles -1) * self.rear_axle_spacing + self.saddle_pos_from_rear_axle + 0.5
-        parts.append(_create_cuboid((x_offset, y_offset + (self.cab_width - 1.0) / 2, z_offset + self.frame_level_z - 0.2), 
-                                   (chassis_len, 1.0, 0.2), 'dimgray', 'Рама тягача'))
+        frame_width = 1.0
+        parts.append(_create_cuboid((x_offset, y_offset + (self.cab_width - frame_width) / 2, z_offset + self.frame_level_z - 0.2), 
+                                   (chassis_len, frame_width, 0.2), 'dimgray', 'Рама тягача'))
         # Седло
         saddle_x_center = self.first_rear_axle_pos + self.saddle_pos_from_rear_axle
-        parts.append(_create_cuboid((x_offset + saddle_x_center - 0.5, y_offset + (self.cab_width - 1.2) / 2, z_offset + self.frame_level_z), 
-                                   (1.0, 1.2, 0.05), 'darkslategrey', 'Седло'))
+        saddle_width = 1.2
+        parts.append(_create_cuboid((x_offset + saddle_x_center - 0.5, y_offset + (self.cab_width - saddle_width) / 2, z_offset + self.frame_level_z), 
+                                   (1.0, saddle_width, 0.05), 'darkslategrey', 'Седло'))
         
         # Колеса
-        # ИСПРАВЛЕНИЕ: Колеса теперь центрируются так, чтобы быть внутри габарита
         y_left_center_single = y_offset + self.wheel_width / 2
         y_right_center_single = y_offset + self.cab_width - self.wheel_width / 2
         
@@ -145,10 +149,13 @@ class SemiTrailer:
     def get_components(self, x_offset=0, y_offset=0, z_offset=0):
         """Возвращает список всех 3D компонентов полуприцепа со смещением."""
         parts = []
+
+        # TODO: Заменить на загрузку .gltf модели кузова (тент, цистерна и т.д.)
         # Кузов
         parts.append(_create_cuboid((x_offset, y_offset, z_offset), (self.length, self.width, self.height), 'lightcoral', 'Кузов'))
         # Рама
-        parts.append(_create_cuboid((x_offset, y_offset + (self.width - 1.0)/2, z_offset - 0.2), (self.length, 1.0, 0.2), 'dimgray', 'Рама прицепа'))
+        frame_width = 1.0
+        parts.append(_create_cuboid((x_offset, y_offset + (self.width - frame_width)/2, z_offset - 0.2), (self.length, frame_width, 0.2), 'dimgray', 'Рама прицепа'))
         
         # Колеса
         y_left_center = y_offset + self.wheel_width
@@ -196,6 +203,8 @@ class Van:
     def get_components(self, x_offset=0, y_offset=0, z_offset=0):
         """Возвращает список всех 3D компонентов фургона."""
         parts = []
+        
+        # TODO: Заменить на загрузку .gltf модели фургона
         # Кабина
         parts.append(_create_cuboid((x_offset, y_offset, z_offset + self.frame_level_z),
                                    (self.cab_length, self.body_width, self.body_height), 'skyblue', 'Кабина фургона'))
@@ -204,8 +213,9 @@ class Van:
                                    (self.body_length, self.body_width, self.body_height), 'lightgrey', 'Кузов фургона'))
         # Рама
         chassis_len = self.cab_length + self.body_length
-        parts.append(_create_cuboid((x_offset, y_offset + (self.body_width - 1.0)/2, z_offset + self.frame_level_z - 0.2),
-                                   (chassis_len, 1.0, 0.2), 'dimgray', 'Рама фургона'))
+        frame_width = 1.0
+        parts.append(_create_cuboid((x_offset, y_offset + (self.body_width - frame_width)/2, z_offset + self.frame_level_z - 0.2),
+                                   (chassis_len, frame_width, 0.2), 'dimgray', 'Рама фургона'))
         # Колеса
         y_left_center = y_offset + self.wheel_width
         y_right_center = y_offset + self.body_width - self.wheel_width
@@ -241,22 +251,26 @@ class Scene:
             self.components.extend(vehicle.get_components(x, y, z))
 
     def add_articulated_vehicle(self, tractor, trailer):
+        """Добавляет сцепку тягача и полуприцепа на сцену."""
         if tractor and trailer:
+            # Рассчитываем точку сцепки
             trailer_start_x = tractor.saddle_pos - trailer.kingpin_offset
-            # Центрируем тягач относительно более широкого прицепа
+            # Центрируем тягач относительно более широкого прицепа для красоты
             y_offset_tractor = (trailer.width - tractor.cab_width) / 2
-            self.components.extend(tractor.get_components(y_offset=y_offset_tractor))
-            self.components.extend(trailer.get_components(trailer_start_x, 0, tractor.frame_level_z))
+            
+            self.add(tractor, y_offset=y_offset_tractor)
+            self.add(trailer, x=trailer_start_x, z=tractor.frame_level_z)
 
     def generate_figure(self):
         """Собирает все добавленные компоненты в единую 3D модель."""
         if not self.components:
-            return go.Figure()
-
-        fig = go.Figure(data=self.components)
+            # Возвращаем пустую сцену, если нет компонентов
+            fig = go.Figure()
+        else:
+            fig = go.Figure(data=self.components)
         
         fig.update_layout(
-            title='Параметрическая 3D модель',
+            title_text='3D Модель',
             scene=dict(
                 xaxis=dict(title='Длина (X)', autorange="reversed"),
                 yaxis=dict(title='Ширина (Y)'),
