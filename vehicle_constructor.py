@@ -102,7 +102,7 @@ class Tractor:
         
         # Задние
         for i in range(self.num_rear_axles):
-            axle_x = self.first_rear_axle_pos - (i * self.rear_axle_spacing)
+            axle_x = self.first_rear_axle_pos + (i * self.rear_axle_spacing)
             if self.wheel_type == 'dual':
                 centers = [
                     (x_offset + axle_x, y_left_center - self.wheel_width/2, z_offset + self.wheel_radius),
@@ -158,10 +158,10 @@ class SemiTrailer:
         for i in range(self.num_axles):
             axle_x = x_offset + first_axle_pos - (i * self.axle_spacing)
             centers = [
-                (axle_x, y_left_center - self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
-                (axle_x, y_left_center + self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
-                (axle_x, y_right_center - self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
-                (axle_x, y_right_center + self.wheel_width/2, z_offset - 0.2 - self.wheel_radius)
+                (axle_x, y_left_center - self.wheel_width/2, z_offset - 0.2 + self.wheel_radius),
+                (axle_x, y_left_center + self.wheel_width/2, z_offset - 0.2 + self.wheel_radius),
+                (axle_x, y_right_center - self.wheel_width/2, z_offset - 0.2 + self.wheel_radius),
+                (axle_x, y_right_center + self.wheel_width/2, z_offset - 0.2 + self.wheel_radius)
             ]
             for center in centers: 
                 parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
@@ -217,7 +217,7 @@ class Van:
         # Задние
         first_rear_axle_pos = self.front_axle_pos + self.wheelbase
         for i in range(self.num_rear_axles):
-            axle_x = first_rear_axle_pos - (i * self.rear_axle_spacing)
+            axle_x = first_rear_axle_pos + (i * self.rear_axle_spacing)
             centers = [
                 (x_offset + axle_x, y_left_center - self.wheel_width/2, z_offset + self.wheel_radius),
                 (x_offset + axle_x, y_left_center + self.wheel_width/2, z_offset + self.wheel_radius),
@@ -258,7 +258,7 @@ class Scene:
         fig.update_layout(
             title='Параметрическая 3D модель',
             scene=dict(
-                xaxis=dict(title='Длина (X)'),
+                xaxis=dict(title='Длина (X)', autorange="reversed"),
                 yaxis=dict(title='Ширина (Y)'),
                 zaxis=dict(title='Высота (Z)'),
                 aspectmode='data',
@@ -266,3 +266,4 @@ class Scene:
             margin=dict(l=10, r=10, b=10, t=40)
         )
         return fig
+
