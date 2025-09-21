@@ -29,16 +29,15 @@ def _create_cylinder(center, radius, length, axis='y', color='darkgrey', name='c
     if axis == 'y':
         v = np.linspace(cy - length / 2, cy + length / 2, 2)
         theta_grid, v_grid = np.meshgrid(theta, v)
-        x_grid = radius * np.cos(theta_grid) + cx
-        y_grid = v_grid
-        z_grid = radius * np.sin(theta_grid) + cz
-    # ... (остальные оси без изменений)
+        x_grid, y_grid, z_grid = radius * np.cos(theta_grid) + cx, v_grid, radius * np.sin(theta_grid) + cz
+    elif axis == 'x':
+        v = np.linspace(cx - length / 2, cx + length / 2, 2)
+        theta_grid, v_grid = np.meshgrid(theta, v)
+        x_grid, y_grid, z_grid = v_grid, radius * np.cos(theta_grid) + cy, radius * np.sin(theta_grid) + cz
     else: # 'z'
         v = np.linspace(cz - length / 2, cz + length / 2, 2)
         theta_grid, v_grid = np.meshgrid(theta, v)
-        x_grid = radius * np.cos(theta_grid) + cx
-        y_grid = radius * np.sin(theta_grid) + cy
-        z_grid = v_grid
+        x_grid, y_grid, z_grid = radius * np.cos(theta_grid) + cx, radius * np.sin(theta_grid) + cy, v_grid
         
     colorscale = [[0, color], [1, color]]
     return go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale=colorscale, showscale=False, name=name, hoverinfo='name')
@@ -67,13 +66,11 @@ class Tractor:
         
         self.wheel_radius = self.wheel_diameter / 2
         self.frame_level_z = self.wheel_diameter * 1.1
-        # ИСПРАВЛЕНИЕ: Точное положение первой задней оси
         self.first_rear_axle_pos = self.front_axle_pos + self.wheelbase
-        # ИСПРАВЛЕНИЕ: Точное положение седла
         self.saddle_pos = self.first_rear_axle_pos + self.saddle_pos_from_rear_axle
 
     def get_unique_name(self):
-        return f"{self.brand} {self.model}"
+        return f"{self.brand} {self.model} (Тягач)"
 
     def get_components(self, x_offset=0, y_offset=0, z_offset=0):
         """Возвращает список всех 3D компонентов тягача со смещением."""
@@ -83,7 +80,7 @@ class Tractor:
         parts.append(_create_cuboid((x_offset, y_offset, z_offset + self.frame_level_z), 
                                    (self.cab_length, self.cab_width, self.cab_height), 'royalblue', 'Кабина'))
         # Рама
-        chassis_len = self.saddle_pos + 1.0 # Рама идет чуть дальше седла
+        chassis_len = self.saddle_pos + 1.0
         parts.append(_create_cuboid((x_offset, y_offset + (self.cab_width - 1.0) / 2, z_offset + self.frame_level_z - 0.2), 
                                    (chassis_len, 1.0, 0.2), 'dimgray', 'Рама тягача'))
         # Седло
@@ -91,10 +88,13 @@ class Tractor:
                                    (1.0, 1.2, 0.05), 'darkslategrey', 'Седло'))
         
         # Колеса
-        # ИСПРАВЛЕНИЕ: Правильный расчет колеи, чтобы колеса были внутри габаритов
-        track_width = self.cab_width - self.wheel_width if self.wheel_type == 'single' else self.cab_width - self.wheel_width * 2
-        y_left_center = y_offset + self.wheel_width / 2
-        y_right_center = y_offset + self.cab_width - self.wheel_width / 2
+        # ИСПРАВЛЕНИЕ: Колеса теперь центрируются так, чтобы быть внутри габарита
+        if self.wheel_type == 'single':
+            y_left_center = y_offset + self.wheel_width / 2
+            y_right_center = y_offset + self.cab_width - self.wheel_width / 2
+        else: # dual
+            y_left_center = y_offset + self.wheel_width
+            y_right_center = y_offset + self.cab_width - self.wheel_width
 
         # Передние
         parts.append(_create_cylinder((x_offset + self.front_axle_pos, y_left_center, z_offset + self.wheel_radius), self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
@@ -104,14 +104,19 @@ class Tractor:
         for i in range(self.num_rear_axles):
             axle_x = self.first_rear_axle_pos - (i * self.rear_axle_spacing)
             if self.wheel_type == 'dual':
-                y_left_inner = y_offset + self.cab_width/2 - track_width/4 - self.wheel_width/2
-                y_left_outer = y_offset + self.cab_width/2 - track_width/4 + self.wheel_width/2
-                y_right_inner = y_offset + self.cab_width/2 + track_width/4 - self.wheel_width/2
-                y_right_outer = y_offset + self.cab_width/2 + track_width/4 + self.wheel_width/2
-                centers = [(x_offset + axle_x, y, z_offset + self.wheel_radius) for y in [y_left_inner, y_left_outer, y_right_inner, y_right_outer]]
+                centers = [
+                    (x_offset + axle_x, y_left_center - self.wheel_width/2, z_offset + self.wheel_radius),
+                    (x_offset + axle_x, y_left_center + self.wheel_width/2, z_offset + self.wheel_radius),
+                    (x_offset + axle_x, y_right_center - self.wheel_width/2, z_offset + self.wheel_radius),
+                    (x_offset + axle_x, y_right_center + self.wheel_width/2, z_offset + self.wheel_radius)
+                ]
             else: # single
-                centers = [(x_offset + axle_x, y, z_offset + self.wheel_radius) for y in [y_left_center, y_right_center]]
-            for center in centers: parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
+                centers = [
+                    (x_offset + axle_x, y_left_center, z_offset + self.wheel_radius),
+                    (x_offset + axle_x, y_right_center, z_offset + self.wheel_radius)
+                ]
+            for center in centers: 
+                parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
 
         return parts
 
@@ -135,7 +140,7 @@ class SemiTrailer:
         self.wheel_radius = self.wheel_diameter / 2
 
     def get_unique_name(self):
-        return f"{self.brand} {self.model}"
+        return f"{self.brand} {self.model} (Прицеп)"
 
     def get_components(self, x_offset=0, y_offset=0, z_offset=0):
         """Возвращает список всех 3D компонентов полуприцепа со смещением."""
@@ -146,21 +151,23 @@ class SemiTrailer:
         parts.append(_create_cuboid((x_offset, y_offset + (self.width - 1.0)/2, z_offset - 0.2), (self.length, 1.0, 0.2), 'dimgray', 'Рама прицепа'))
         
         # Колеса
-        track_width = self.width - self.wheel_width*2
-        y_left_inner = y_offset + self.width/2 - track_width/4 - self.wheel_width/2
-        y_left_outer = y_offset + self.width/2 - track_width/4 + self.wheel_width/2
-        y_right_inner = y_offset + self.width/2 + track_width/4 - self.wheel_width/2
-        y_right_outer = y_offset + self.width/2 + track_width/4 + self.wheel_width/2
+        y_left_center = y_offset + self.wheel_width
+        y_right_center = y_offset + self.width - self.wheel_width
         
-        first_axle_pos = x_offset + self.length - self.axle_pos_from_rear
+        first_axle_pos = self.length - self.axle_pos_from_rear
         for i in range(self.num_axles):
-            axle_x = first_axle_pos - (i * self.axle_spacing)
-            centers = [(axle_x, y, z_offset - 0.2 - self.wheel_radius) for y in [y_left_inner, y_left_outer, y_right_inner, y_right_outer]]
-            for center in centers: parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
+            axle_x = x_offset + first_axle_pos - (i * self.axle_spacing)
+            centers = [
+                (axle_x, y_left_center - self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
+                (axle_x, y_left_center + self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
+                (axle_x, y_right_center - self.wheel_width/2, z_offset - 0.2 - self.wheel_radius),
+                (axle_x, y_right_center + self.wheel_width/2, z_offset - 0.2 - self.wheel_radius)
+            ]
+            for center in centers: 
+                parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
             
         return parts
         
-# ... (Класс Van без изменений)
 class Van:
     """Класс для представления Фургона."""
     def __init__(self, brand="Van", model="Default", body_length=6.0, body_width=2.4, body_height=2.2,
@@ -184,7 +191,7 @@ class Van:
         self.frame_level_z = self.wheel_diameter * 1.1
     
     def get_unique_name(self):
-        return f"{self.brand} {self.model}"
+        return f"{self.brand} {self.model} (Фургон)"
 
     def get_components(self, x_offset=0, y_offset=0, z_offset=0):
         """Возвращает список всех 3D компонентов фургона."""
@@ -200,7 +207,6 @@ class Van:
         parts.append(_create_cuboid((x_offset, y_offset + (self.body_width - 1.0)/2, z_offset + self.frame_level_z - 0.2),
                                    (chassis_len, 1.0, 0.2), 'dimgray', 'Рама фургона'))
         # Колеса
-        track_width = self.body_width - self.wheel_width*2
         y_left_center = y_offset + self.wheel_width
         y_right_center = y_offset + self.body_width - self.wheel_width
         
@@ -212,8 +218,14 @@ class Van:
         first_rear_axle_pos = self.front_axle_pos + self.wheelbase
         for i in range(self.num_rear_axles):
             axle_x = first_rear_axle_pos - (i * self.rear_axle_spacing)
-            centers = [(x_offset + axle_x, y, z_offset + self.wheel_radius) for y in [y_left_center, y_right_center]]
-            for center in centers: parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
+            centers = [
+                (x_offset + axle_x, y_left_center - self.wheel_width/2, z_offset + self.wheel_radius),
+                (x_offset + axle_x, y_left_center + self.wheel_width/2, z_offset + self.wheel_radius),
+                (x_offset + axle_x, y_right_center - self.wheel_width/2, z_offset + self.wheel_radius),
+                (x_offset + axle_x, y_right_center + self.wheel_width/2, z_offset + self.wheel_radius)
+            ]
+            for center in centers: 
+                parts.append(_create_cylinder(center, self.wheel_radius, self.wheel_width, 'y', name='Колесо'))
             
         return parts
 
@@ -231,7 +243,9 @@ class Scene:
     def add_articulated_vehicle(self, tractor, trailer):
         if tractor and trailer:
             trailer_start_x = tractor.saddle_pos - trailer.kingpin_offset
-            self.components.extend(tractor.get_components(y_offset=(trailer.width - tractor.cab_width) / 2))
+            # Центрируем тягач относительно более широкого прицепа
+            y_offset_tractor = (trailer.width - tractor.cab_width) / 2
+            self.components.extend(tractor.get_components(y_offset=y_offset_tractor))
             self.components.extend(trailer.get_components(trailer_start_x, 0, tractor.frame_level_z))
 
     def generate_figure(self):
@@ -244,7 +258,7 @@ class Scene:
         fig.update_layout(
             title='Параметрическая 3D модель',
             scene=dict(
-                xaxis=dict(title='Длина (X)', autorange="reversed"),
+                xaxis=dict(title='Длина (X)'),
                 yaxis=dict(title='Ширина (Y)'),
                 zaxis=dict(title='Высота (Z)'),
                 aspectmode='data',
@@ -252,4 +266,3 @@ class Scene:
             margin=dict(l=10, r=10, b=10, t=40)
         )
         return fig
-
