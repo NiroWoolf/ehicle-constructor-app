@@ -258,3 +258,4 @@ class Scene:
             margin=dict(l=10, r=10, b=10, t=40)
         )
         return fig
+
