@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 import numpy as np
 
-# --- Вспомогательные функции отрисовки Z---
+# --- Вспомогательные функции отрисовки ---
 
 def _create_cuboid(origin, dimensions, color='lightblue', name='cuboid'):
     """Создает параллелепипед (кубоид) для Plotly."""
@@ -280,5 +280,6 @@ class Scene:
             margin=dict(l=10, r=10, b=10, t=40)
         )
         return fig
+
 
 
