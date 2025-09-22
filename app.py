@@ -48,7 +48,7 @@ if st.session_state.vehicle_type == "Тягач":
     st.sidebar.subheader("Шасси")
     front_axle_pos = st.sidebar.number_input("Положение передней оси от бампера (м)", value=1.45, step=0.05, key="t_ax_pos")
     wheelbase = st.sidebar.number_input("Колесная база (м)", value=3.6, step=0.1, key="t_wb")
-    saddle_pos_from_rear_axle = st.sidebar.number_input("Смещение седла от задней оси (м)", value=0.5, step=0.05, key="t_saddle")
+    saddle_pos_from_rear_axle = st.sidebar.number_input("Смещение седла от центра задней тележки (м)", value=0.5, step=0.05, key="t_saddle")
     
     st.sidebar.subheader("Колеса")
     num_rear_axles = st.sidebar.number_input("Кол-во задних осей", min_value=1, value=2, step=1, key="t_num_ax")
@@ -69,12 +69,22 @@ if st.session_state.vehicle_type == "Тягач":
         st.sidebar.success("Тягач обновлен!")
 
     if st.sidebar.button("Сохранить в библиотеку"):
+        # Сначала обновляем объект, чтобы сохранить последние введенные данные
+        params = {
+            'brand': brand, 'model': model, 'cab_length': cab_length, 'cab_width': cab_width,
+            'cab_height': cab_height, 'front_axle_pos': front_axle_pos, 'wheelbase': wheelbase,
+            'saddle_pos_from_rear_axle': saddle_pos_from_rear_axle, 'num_rear_axles': num_rear_axles,
+            'rear_axle_spacing': rear_axle_spacing, 'wheel_type': wheel_type,
+            'wheel_diameter': wheel_diameter, 'wheel_width': wheel_width
+        }
+        st.session_state.current_tractor = Tractor(**params)
         unique_name = st.session_state.current_tractor.get_unique_name()
         if unique_name in st.session_state.library:
             st.sidebar.error("Техника с такой маркой и моделью уже существует!")
         else:
             st.session_state.library[unique_name] = st.session_state.current_tractor
             st.sidebar.success(f"Тягач '{unique_name}' сохранен!")
+
 
 # --- ИНТЕРФЕЙС ДЛЯ ПРИЦЕПА ---
 elif st.session_state.vehicle_type == "Прицеп":
@@ -90,12 +100,12 @@ elif st.session_state.vehicle_type == "Прицеп":
 
     st.sidebar.subheader("Шасси")
     kingpin_offset = st.sidebar.number_input("Смещение шкворня от переднего края (м)", value=1.2, step=0.1, key="trl_k_off")
-    axle_pos_from_rear = st.sidebar.number_input("Положение оси от заднего края (м)", value=2.5, step=0.1, key="trl_ax_pos")
+    axle_pos_from_rear = st.sidebar.number_input("Положение задней оси от заднего края (м)", value=2.5, step=0.1, key="trl_ax_pos")
     num_axles = st.sidebar.number_input("Количество осей", min_value=1, value=3, step=1, key="trl_num_ax")
     axle_spacing = st.sidebar.number_input("Расстояние между осями (м)", value=1.3, step=0.1, key="trl_ax_sp")
 
     st.sidebar.subheader("Колеса")
-    wheel_type = st.sidebar.selectbox("Тип колес", ('single', 'dual'), key="trl_w_type") # ИЗМЕНЕНО
+    wheel_type = st.sidebar.selectbox("Тип колес", ('single', 'dual'), key="trl_w_type")
     wheel_diameter = st.sidebar.number_input("Диаметр колес (м)", value=1.0, step=0.05, key="trl_w_d")
     wheel_width = st.sidebar.number_input("Ширина колес (м)", value=0.4, step=0.05, key="trl_w_w")
 
@@ -110,6 +120,13 @@ elif st.session_state.vehicle_type == "Прицеп":
         st.sidebar.success("Прицеп обновлен!")
     
     if st.sidebar.button("Сохранить в библиотеку"):
+        params = {
+            'brand': brand, 'model': model, 'length': length, 'width': width, 'height': height,
+            'kingpin_offset': kingpin_offset, 'axle_pos_from_rear': axle_pos_from_rear,
+            'num_axles': num_axles, 'axle_spacing': axle_spacing, 'wheel_type': wheel_type,
+            'wheel_diameter': wheel_diameter, 'wheel_width': wheel_width
+        }
+        st.session_state.current_trailer = SemiTrailer(**params)
         unique_name = st.session_state.current_trailer.get_unique_name()
         if unique_name in st.session_state.library:
             st.sidebar.error("Техника с такой маркой и моделью уже существует!")
@@ -152,6 +169,13 @@ elif st.session_state.vehicle_type == "Фургон":
         st.sidebar.success("Фургон обновлен!")
     
     if st.sidebar.button("Сохранить в библиотеку"):
+        params = {
+            'brand': brand, 'model': model, 'cab_length': cab_length, 'body_length': body_length,
+            'body_width': body_width, 'body_height': body_height, 'front_axle_pos': front_axle_pos,
+            'wheelbase': wheelbase, 'num_rear_axles': num_rear_axles, 'rear_axle_spacing': rear_axle_spacing,
+            'wheel_type': wheel_type, 'wheel_diameter': wheel_diameter, 'wheel_width': wheel_width
+        }
+        st.session_state.current_van = Van(**params)
         unique_name = st.session_state.current_van.get_unique_name()
         if unique_name in st.session_state.library:
             st.sidebar.error("Техника с такой маркой и моделью уже существует!")
