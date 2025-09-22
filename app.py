@@ -58,7 +58,6 @@ if st.session_state.vehicle_type == "Тягач":
     wheel_width = st.sidebar.number_input("Ширина колес (м)", value=0.4, step=0.05, key="t_w_w")
     
     if st.sidebar.button("Создать / Обновить"):
-        # Собираем параметры из всех полей ввода
         params = {
             'brand': brand, 'model': model, 'cab_length': cab_length, 'cab_width': cab_width,
             'cab_height': cab_height, 'front_axle_pos': front_axle_pos, 'wheelbase': wheelbase,
@@ -96,6 +95,7 @@ elif st.session_state.vehicle_type == "Прицеп":
     axle_spacing = st.sidebar.number_input("Расстояние между осями (м)", value=1.3, step=0.1, key="trl_ax_sp")
 
     st.sidebar.subheader("Колеса")
+    wheel_type = st.sidebar.selectbox("Тип колес", ('single', 'dual'), key="trl_w_type") # ИЗМЕНЕНО
     wheel_diameter = st.sidebar.number_input("Диаметр колес (м)", value=1.0, step=0.05, key="trl_w_d")
     wheel_width = st.sidebar.number_input("Ширина колес (м)", value=0.4, step=0.05, key="trl_w_w")
 
@@ -103,7 +103,7 @@ elif st.session_state.vehicle_type == "Прицеп":
         params = {
             'brand': brand, 'model': model, 'length': length, 'width': width, 'height': height,
             'kingpin_offset': kingpin_offset, 'axle_pos_from_rear': axle_pos_from_rear,
-            'num_axles': num_axles, 'axle_spacing': axle_spacing,
+            'num_axles': num_axles, 'axle_spacing': axle_spacing, 'wheel_type': wheel_type,
             'wheel_diameter': wheel_diameter, 'wheel_width': wheel_width
         }
         st.session_state.current_trailer = SemiTrailer(**params)
@@ -120,8 +120,45 @@ elif st.session_state.vehicle_type == "Прицеп":
 # --- ИНТЕРФЕЙС ДЛЯ ФУРГОНА ---
 elif st.session_state.vehicle_type == "Фургон":
     st.sidebar.header("Параметры фургона")
-    st.sidebar.info("Параметры для фургона будут добавлены в следующей итерации.")
-    st.session_state.current_van = Van() # Пока используем по умолчанию
+    
+    brand = st.sidebar.text_input("Марка", value=st.session_state.current_van.brand, key="van_brand")
+    model = st.sidebar.text_input("Модель", value=st.session_state.current_van.model, key="van_model")
+
+    st.sidebar.subheader("Габариты")
+    cab_length = st.sidebar.number_input("Длина кабины (м)", value=2.0, step=0.1, key="van_cab_l")
+    body_length = st.sidebar.number_input("Длина кузова (м)", value=4.2, step=0.1, key="van_body_l")
+    body_width = st.sidebar.number_input("Ширина кузова (м)", value=2.2, step=0.1, key="van_body_w")
+    body_height = st.sidebar.number_input("Высота кузова (м)", value=2.2, step=0.1, key="van_body_h")
+    
+    st.sidebar.subheader("Шасси")
+    front_axle_pos = st.sidebar.number_input("Положение передней оси от бампера (м)", value=1.0, step=0.05, key="van_ax_pos")
+    wheelbase = st.sidebar.number_input("Колесная база (м)", value=4.0, step=0.1, key="van_wb")
+    
+    st.sidebar.subheader("Колеса")
+    num_rear_axles = st.sidebar.number_input("Кол-во задних осей", min_value=1, value=1, step=1, key="van_num_ax")
+    rear_axle_spacing = st.sidebar.number_input("Расстояние между задними осями (м)", value=1.0, step=0.1, key="van_ax_sp")
+    wheel_type = st.sidebar.selectbox("Тип задних колес", ('dual', 'single'), key="van_w_type")
+    wheel_diameter = st.sidebar.number_input("Диаметр колес (м)", value=0.8, step=0.05, key="van_w_d")
+    wheel_width = st.sidebar.number_input("Ширина колес (м)", value=0.3, step=0.05, key="van_w_w")
+
+    if st.sidebar.button("Создать / Обновить"):
+        params = {
+            'brand': brand, 'model': model, 'cab_length': cab_length, 'body_length': body_length,
+            'body_width': body_width, 'body_height': body_height, 'front_axle_pos': front_axle_pos,
+            'wheelbase': wheelbase, 'num_rear_axles': num_rear_axles, 'rear_axle_spacing': rear_axle_spacing,
+            'wheel_type': wheel_type, 'wheel_diameter': wheel_diameter, 'wheel_width': wheel_width
+        }
+        st.session_state.current_van = Van(**params)
+        st.sidebar.success("Фургон обновлен!")
+    
+    if st.sidebar.button("Сохранить в библиотеку"):
+        unique_name = st.session_state.current_van.get_unique_name()
+        if unique_name in st.session_state.library:
+            st.sidebar.error("Техника с такой маркой и моделью уже существует!")
+        else:
+            st.session_state.library[unique_name] = st.session_state.current_van
+            st.sidebar.success(f"Фургон '{unique_name}' сохранен!")
+
 
 # --- ИНТЕРФЕЙС ДЛЯ СБОРКИ ---
 elif st.session_state.vehicle_type == "Сборка автопоезда":
@@ -143,7 +180,6 @@ elif st.session_state.vehicle_type == "Сборка автопоезда":
 st.header("3D Модель")
 scene = Scene()
 
-# Отображение соответствующей модели в зависимости от режима
 if st.session_state.vehicle_type == "Тягач":
     scene.add(st.session_state.current_tractor)
 elif st.session_state.vehicle_type == "Прицеп":
@@ -156,7 +192,6 @@ elif st.session_state.vehicle_type == "Сборка автопоезда":
 fig = scene.generate_figure()
 st.plotly_chart(fig, use_container_width=True)
 
-# Отображение библиотеки
 st.sidebar.header("Библиотека")
 if st.session_state.library:
     st.sidebar.json(list(st.session_state.library.keys()))
