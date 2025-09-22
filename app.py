@@ -1,7 +1,7 @@
 import streamlit as st
 from vehicle_constructor import Tractor, SemiTrailer, Van, Scene
 
-# --- Инициализация состояния сессии Z---
+# --- Инициализация состояния сессии ---
 def init_session_state():
     """Инициализирует состояние сессии, если оно еще не создано."""
     defaults = {
@@ -221,5 +221,6 @@ if st.session_state.library:
     st.sidebar.json(list(st.session_state.library.keys()))
 else:
     st.sidebar.write("Пусто")
+
 
 
